@@ -1,0 +1,5 @@
+{
+  "hidden": [16, 16],
+  "epochs": 300,
+  "learning_rate": 0.001
+}

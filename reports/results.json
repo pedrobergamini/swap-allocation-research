@@ -1,0 +1,779 @@
+{
+  "format": "sar-public-results/1",
+  "gate_bp": 0.1,
+  "dataset": {
+    "scope": "Historical-state replay for two WETH/USDC Uniswap v3 pools on Base",
+    "splitting": "Chronological groups: 8 training, 2 validation, 2 held-out test",
+    "splits": {
+      "train": {
+        "cases": 25344,
+        "declined": 5889,
+        "eligible": 19455
+      },
+      "validation": {
+        "cases": 6336,
+        "declined": 1407,
+        "eligible": 4929
+      },
+      "test": {
+        "cases": 6336,
+        "declined": 1314,
+        "eligible": 5022
+      }
+    },
+    "order_sizes": "Synthetic log-uniform size distribution, not observed order flow",
+    "gas_price_wei": "6000000",
+    "original_corpus_distributed": false,
+    "acquisition": "Prepared training cases and compatible replay inputs from the user's data stack"
+  },
+  "held_out_runtime": {
+    "solves": 6336,
+    "successful_pairs": 6336,
+    "reference_failures": 0,
+    "failed_where_fynd_solved": 0,
+    "gate_failures": 0,
+    "gate_passed": true,
+    "seeded_solves": 5022,
+    "skipped_solves": 3479,
+    "skip_rate": 0.6927518916766229,
+    "worst_final_delta_bp": -0.018626900821150698,
+    "worst_skipped_final_delta_bp": -0.002720827385104875
+  },
+  "benchmarks": {
+    "dev": {
+      "solves": 1800,
+      "unique_orders": 600,
+      "repeats": [
+        0,
+        1,
+        2
+      ],
+      "source_rows_sha256": "723f36dff3846e75cfafdc3e412907daded73a71c167320e561621fa8378514f",
+      "clean_reference_equivalence": {
+        "cases": 600,
+        "identical": 600
+      },
+      "paired_simulations_offset_minus_coarse": {
+        "solves": 475,
+        "mean": -6.705263157894737,
+        "median": -5
+      },
+      "methods": {
+        "water_fill": {
+          "label": "Fynd reference",
+          "all": {
+            "solves": 1800,
+            "successful_pairs": 1800,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 1.0,
+            "time_ratio_p90": 1.0,
+            "time_ratio_sum": 1.0,
+            "delta_bp": {
+              "worst": 0.0,
+              "median": 0.0,
+              "mean": 0.0
+            },
+            "better_equal_worse": [
+              0,
+              1800,
+              0
+            ]
+          },
+          "two_pool": {
+            "solves": 1425,
+            "successful_pairs": 1425,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 1.0,
+            "time_ratio_p90": 1.0,
+            "time_ratio_sum": 1.0,
+            "delta_bp": {
+              "worst": 0.0,
+              "median": 0.0,
+              "mean": 0.0
+            },
+            "better_equal_worse": [
+              0,
+              1425,
+              0
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 475,
+            "total_mean": 606.6084210526316,
+            "total_median": 606
+          }
+        },
+        "coarse": {
+          "label": "Coarse split, always refine",
+          "all": {
+            "solves": 1800,
+            "successful_pairs": 1800,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.30634133531899127,
+            "time_ratio_p90": 1.0019216132109101,
+            "time_ratio_sum": 0.48903282553437716,
+            "delta_bp": {
+              "worst": -7.992493821955188e-05,
+              "median": 0.0,
+              "mean": 6.44369542914416e-06
+            },
+            "better_equal_worse": [
+              594,
+              699,
+              507
+            ]
+          },
+          "two_pool": {
+            "solves": 1425,
+            "successful_pairs": 1425,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.21575342465753425,
+            "time_ratio_p90": 0.6981575387161976,
+            "time_ratio_sum": 0.4606391162410702,
+            "delta_bp": {
+              "worst": -7.992493821955188e-05,
+              "median": 0.0,
+              "mean": 8.139404752603149e-06
+            },
+            "better_equal_worse": [
+              594,
+              324,
+              507
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 475,
+            "total_mean": 99.65684210526315,
+            "total_median": 96
+          }
+        },
+        "offset": {
+          "label": "Neural initializer, always refine",
+          "all": {
+            "solves": 1800,
+            "successful_pairs": 1800,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.29944176302338466,
+            "time_ratio_p90": 1.0020816438642843,
+            "time_ratio_sum": 0.45108072315714787,
+            "delta_bp": {
+              "worst": -0.00010212860505878153,
+              "median": 0.0,
+              "mean": 3.201077281042408e-07
+            },
+            "better_equal_worse": [
+              555,
+              777,
+              468
+            ]
+          },
+          "two_pool": {
+            "solves": 1425,
+            "successful_pairs": 1425,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.2073651907058308,
+            "time_ratio_p90": 0.6444472745797248,
+            "time_ratio_sum": 0.4205347596013449,
+            "delta_bp": {
+              "worst": -0.00010212860505878153,
+              "median": 0.0,
+              "mean": 4.0434660392114627e-07
+            },
+            "better_equal_worse": [
+              555,
+              402,
+              468
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 475,
+            "total_mean": 92.95157894736842,
+            "total_median": 90
+          }
+        },
+        "offset_certified": {
+          "label": "Learned warm start with checked skip",
+          "all": {
+            "solves": 1800,
+            "successful_pairs": 1800,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.28753393267613614,
+            "time_ratio_p90": 1.0034796099290781,
+            "time_ratio_sum": 0.43652075339776397,
+            "delta_bp": {
+              "worst": -0.0020369080997222795,
+              "median": -3.1251110086857315e-11,
+              "mean": -4.793574602321827e-05
+            },
+            "better_equal_worse": [
+              282,
+              585,
+              933
+            ]
+          },
+          "two_pool": {
+            "solves": 1425,
+            "successful_pairs": 1425,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.16973757677275264,
+            "time_ratio_p90": 0.6439888644122165,
+            "time_ratio_sum": 0.40570302672888975,
+            "delta_bp": {
+              "worst": -0.0020369080997222795,
+              "median": -1.045661889453599e-06,
+              "mean": -6.0550416029328346e-05
+            },
+            "better_equal_worse": [
+              282,
+              210,
+              933
+            ]
+          },
+          "skipped": {
+            "solves": 909,
+            "rate": 0.6378947368421053,
+            "worst_final_delta_bp": -0.0020369080997222795
+          },
+          "simulations": {
+            "solves": 475,
+            "total_mean": 76.60631578947368,
+            "total_median": 64
+          }
+        },
+        "quadratic": {
+          "label": "Quadratic formula",
+          "all": {
+            "solves": 1800,
+            "successful_pairs": 1800,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.30177455320022994,
+            "time_ratio_p90": 1.0039558122018577,
+            "time_ratio_sum": 0.47777267357355907,
+            "delta_bp": {
+              "worst": -6.90933822593494e-05,
+              "median": 0.0,
+              "mean": 2.405924895172699e-07
+            },
+            "better_equal_worse": [
+              534,
+              807,
+              459
+            ]
+          },
+          "two_pool": {
+            "solves": 1425,
+            "successful_pairs": 1425,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.2075626798191533,
+            "time_ratio_p90": 0.6455411213165587,
+            "time_ratio_sum": 0.44942486810543386,
+            "delta_bp": {
+              "worst": -6.90933822593494e-05,
+              "median": 0.0,
+              "mean": 3.039063025481304e-07
+            },
+            "better_equal_worse": [
+              534,
+              432,
+              459
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 475,
+            "total_mean": 94.12,
+            "total_median": 90
+          }
+        },
+        "offset_confident": {
+          "label": "Prediction-only skip (disabled)",
+          "all": {
+            "solves": 1800,
+            "successful_pairs": 1800,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 3,
+            "gate_passed": false,
+            "time_ratio_median": 0.2624411713862284,
+            "time_ratio_p90": 1.0107585004359199,
+            "time_ratio_sum": 0.38142914465209515,
+            "delta_bp": {
+              "worst": -0.2976169507855705,
+              "median": -1.158490063254755e-06,
+              "mean": -0.0007760622947556676
+            },
+            "better_equal_worse": [
+              156,
+              555,
+              1089
+            ]
+          },
+          "two_pool": {
+            "solves": 1425,
+            "successful_pairs": 1425,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 3,
+            "gate_passed": false,
+            "time_ratio_median": 0.15955056179775282,
+            "time_ratio_p90": 0.5145672691382395,
+            "time_ratio_sum": 0.3471121822514172,
+            "delta_bp": {
+              "worst": -0.2976169507855705,
+              "median": -3.9108797682155474e-06,
+              "mean": -0.0009802892144282116
+            },
+            "better_equal_worse": [
+              156,
+              180,
+              1089
+            ]
+          },
+          "skipped": {
+            "solves": 1167,
+            "rate": 0.8189473684210526,
+            "worst_final_delta_bp": -0.2976169507855705
+          },
+          "simulations": {
+            "solves": 475,
+            "total_mean": 66.78105263157894,
+            "total_median": 58
+          }
+        }
+      }
+    },
+    "fresh": {
+      "solves": 4320,
+      "unique_orders": 1440,
+      "repeats": [
+        0,
+        1,
+        2
+      ],
+      "source_rows_sha256": "8ba38d89c300f3a5f1ae951ea56fe5335702cc7c7919c5638ba023be698f3874",
+      "clean_reference_equivalence": {
+        "cases": 1440,
+        "identical": 1440
+      },
+      "paired_simulations_offset_minus_coarse": {
+        "solves": 1126,
+        "mean": -5.439609236234459,
+        "median": -4.0
+      },
+      "methods": {
+        "water_fill": {
+          "label": "Fynd reference",
+          "all": {
+            "solves": 4320,
+            "successful_pairs": 4320,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 1.0,
+            "time_ratio_p90": 1.0,
+            "time_ratio_sum": 1.0,
+            "delta_bp": {
+              "worst": 0.0,
+              "median": 0.0,
+              "mean": 0.0
+            },
+            "better_equal_worse": [
+              0,
+              4320,
+              0
+            ]
+          },
+          "two_pool": {
+            "solves": 3378,
+            "successful_pairs": 3378,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 1.0,
+            "time_ratio_p90": 1.0,
+            "time_ratio_sum": 1.0,
+            "delta_bp": {
+              "worst": 0.0,
+              "median": 0.0,
+              "mean": 0.0
+            },
+            "better_equal_worse": [
+              0,
+              3378,
+              0
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 1126,
+            "total_mean": 606.8792184724689,
+            "total_median": 606.0
+          }
+        },
+        "coarse": {
+          "label": "Coarse split, always refine",
+          "all": {
+            "solves": 4320,
+            "successful_pairs": 4320,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.3459739002652905,
+            "time_ratio_p90": 0.996442543095833,
+            "time_ratio_sum": 0.4757920629890811,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": 0.0,
+              "mean": -1.579407195688202e-05
+            },
+            "better_equal_worse": [
+              1281,
+              1623,
+              1416
+            ]
+          },
+          "two_pool": {
+            "solves": 3378,
+            "successful_pairs": 3378,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.23325491096702522,
+            "time_ratio_p90": 0.7441220235288082,
+            "time_ratio_sum": 0.44517432440583066,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": 0.0,
+              "mean": -2.0198457919991214e-05
+            },
+            "better_equal_worse": [
+              1281,
+              681,
+              1416
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 1126,
+            "total_mean": 99.1190053285968,
+            "total_median": 95.0
+          }
+        },
+        "offset": {
+          "label": "Neural initializer, always refine",
+          "all": {
+            "solves": 4320,
+            "successful_pairs": 4320,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.3430507718471115,
+            "time_ratio_p90": 0.9980665093935294,
+            "time_ratio_sum": 0.44913634630323407,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": 0.0,
+              "mean": -1.576438213287926e-05
+            },
+            "better_equal_worse": [
+              1218,
+              1881,
+              1221
+            ]
+          },
+          "two_pool": {
+            "solves": 3378,
+            "successful_pairs": 3378,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.22859716586429196,
+            "time_ratio_p90": 0.6587429748520937,
+            "time_ratio_sum": 0.4168607754232295,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": 0.0,
+              "mean": -2.0160488695689286e-05
+            },
+            "better_equal_worse": [
+              1218,
+              939,
+              1221
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 1126,
+            "total_mean": 93.67939609236234,
+            "total_median": 90.0
+          }
+        },
+        "offset_certified": {
+          "label": "Learned warm start with checked skip",
+          "all": {
+            "solves": 4320,
+            "successful_pairs": 4320,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.3073037900067924,
+            "time_ratio_p90": 0.9980919665576153,
+            "time_ratio_sum": 0.43459995381087163,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": -1.1058830783812916e-07,
+              "mean": -5.630405869965909e-05
+            },
+            "better_equal_worse": [
+              558,
+              1455,
+              2307
+            ]
+          },
+          "two_pool": {
+            "solves": 3378,
+            "successful_pairs": 3378,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.1885389610038664,
+            "time_ratio_p90": 0.6611841713037858,
+            "time_ratio_sum": 0.401773416913124,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": -1.5081962425212742e-06,
+              "mean": -7.200519052176651e-05
+            },
+            "better_equal_worse": [
+              558,
+              513,
+              2307
+            ]
+          },
+          "skipped": {
+            "solves": 2112,
+            "rate": 0.6252220248667851,
+            "worst_final_delta_bp": -0.0017494219397486848
+          },
+          "simulations": {
+            "solves": 1126,
+            "total_mean": 77.90230905861456,
+            "total_median": 64.0
+          }
+        },
+        "quadratic": {
+          "label": "Quadratic formula",
+          "all": {
+            "solves": 4320,
+            "successful_pairs": 4320,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.3446674279984402,
+            "time_ratio_p90": 0.9962832175790222,
+            "time_ratio_sum": 0.456229648830795,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": 0.0,
+              "mean": -1.5497267806336376e-05
+            },
+            "better_equal_worse": [
+              1221,
+              1875,
+              1224
+            ]
+          },
+          "two_pool": {
+            "solves": 3378,
+            "successful_pairs": 3378,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.2259934250478237,
+            "time_ratio_p90": 0.6925476135961535,
+            "time_ratio_sum": 0.4247563075129633,
+            "delta_bp": {
+              "worst": -0.015260771198115176,
+              "median": 0.0,
+              "mean": -1.981888600455096e-05
+            },
+            "better_equal_worse": [
+              1221,
+              933,
+              1224
+            ]
+          },
+          "skipped": {
+            "solves": 0,
+            "rate": 0.0,
+            "worst_final_delta_bp": null
+          },
+          "simulations": {
+            "solves": 1126,
+            "total_mean": 93.98401420959148,
+            "total_median": 90.0
+          }
+        },
+        "offset_confident": {
+          "label": "Prediction-only skip (disabled)",
+          "all": {
+            "solves": 4320,
+            "successful_pairs": 4320,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.2721197482514066,
+            "time_ratio_p90": 0.9981916817359855,
+            "time_ratio_sum": 0.32461699886870815,
+            "delta_bp": {
+              "worst": -0.07579602151480369,
+              "median": -2.6325763299566373e-06,
+              "mean": -0.004259209660426413
+            },
+            "better_equal_worse": [
+              201,
+              1335,
+              2784
+            ]
+          },
+          "two_pool": {
+            "solves": 3378,
+            "successful_pairs": 3378,
+            "candidate_failures": 0,
+            "failed_where_fynd_solved": 0,
+            "reference_failures": 0,
+            "gate_failures": 0,
+            "gate_passed": true,
+            "time_ratio_median": 0.18012710715871671,
+            "time_ratio_p90": 0.3645639324661385,
+            "time_ratio_sum": 0.28504155763729117,
+            "delta_bp": {
+              "worst": -0.07579602151480369,
+              "median": -2.010694423192729e-05,
+              "mean": -0.005446946635003583
+            },
+            "better_equal_worse": [
+              201,
+              393,
+              2784
+            ]
+          },
+          "skipped": {
+            "solves": 3096,
+            "rate": 0.91651865008881,
+            "worst_final_delta_bp": -0.07579602151480369
+          },
+          "simulations": {
+            "solves": 1126,
+            "total_mean": 63.98401420959147,
+            "total_median": 58.0
+          }
+        }
+      }
+    }
+  },
+  "interpretation": {
+    "reference": "Patched Fynd with no seed; output identity checked separately against unmodified Fynd",
+    "timing": "Paired method/reference wall time; medians are medians of per-solve ratios. Summed ratio uses total method time divided by total reference time. Timings exclude simulation-count instrumentation.",
+    "populations": "All includes every paired order and repeat. Two-pool selects orders where the initializer can run. Simulation counts use a separate single-repeat instrumented run over the same unique orders.",
+    "gate": "Every paired case is checked, including one-pool cases and candidate failures. Reference failures prevent a passing gate. Loss strictly greater than 0.1 bp fails.",
+    "certificate": "The neighboring-quote check bounds gross output under the concavity assumption; net output after gas is measured empirically.",
+    "attribution": "Compare the complete learned warm-start method with Fynd for end-to-end performance. Compare offset with coarse to isolate learned initialization; offset_certified also includes the regret estimator and refinement skip check.",
+    "independence": "Orders, repeats and market states are correlated; counts do not establish future failure probabilities."
+  }
+}

@@ -1,0 +1,15 @@
+# Local research inputs, outputs and agent state.
+/work/
+.agents/
+.codex/
+.claude/
+.env
+.env.*
+!.env.example
+.venv/
+target/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store

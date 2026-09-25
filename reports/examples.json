@@ -1,0 +1,264 @@
+{
+  "format": "sar-public-examples/1",
+  "description": "Selected recorded results; no live browser execution or interpolation",
+  "units": {
+    "amounts": "Integer token base units as decimal strings",
+    "time": "microseconds",
+    "gas": "gas units",
+    "delta_bp": "Final net-output difference against Fynd; positive is better"
+  },
+  "initial_allocation": "First seed proposal for the disjoint candidate; null when no seed ran. Final allocation is Fynd's selected result and can differ.",
+  "pool_order": [
+    "Pool 1",
+    "Pool 2"
+  ],
+  "selection": "First matching fresh-benchmark order by block, direction and amount; repeat 0. Examples illustrate behavior, not median latency.",
+  "examples": [
+    {
+      "id": "checked-skip",
+      "title": "A two-pool split that skips refinement",
+      "description": "Six neighboring quotes pass the gross-output check; the disjoint candidate skips refinement.",
+      "benchmark": "fresh",
+      "repeat": 0,
+      "direction": "usdc-weth",
+      "input_symbol": "USDC",
+      "output_symbol": "WETH",
+      "input_decimals": 6,
+      "output_decimals": 18,
+      "amount_in": "1802095860",
+      "gas_price_wei": "6000000",
+      "methods": {
+        "water_fill": {
+          "initial_pool_amounts": null,
+          "final_pool_amounts": [
+            "1495990141",
+            "306105719"
+          ],
+          "gross_out": "656297003235769316",
+          "net_out": "656295233235769316",
+          "gas": "295000",
+          "elapsed_us": 1780,
+          "delta_bp": 0.0,
+          "seed_status": "not_registered",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "coarse": {
+          "initial_pool_amounts": [
+            "1531781481",
+            "270314379"
+          ],
+          "final_pool_amounts": [
+            "1496034345",
+            "306061515"
+          ],
+          "gross_out": "656297003120570066",
+          "net_out": "656295233120570066",
+          "gas": "295000",
+          "elapsed_us": 293,
+          "delta_bp": -1.7552961558478286e-06,
+          "seed_status": "accepted",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "offset": {
+          "initial_pool_amounts": [
+            "1496045339",
+            "306050521"
+          ],
+          "final_pool_amounts": [
+            "1496045338",
+            "306050522"
+          ],
+          "gross_out": "656297003265410187",
+          "net_out": "656295233265410187",
+          "gas": "295000",
+          "elapsed_us": 265,
+          "delta_bp": 4.516392851713999e-07,
+          "seed_status": "accepted",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "offset_certified": {
+          "initial_pool_amounts": [
+            "1496045339",
+            "306050521"
+          ],
+          "final_pool_amounts": [
+            "1496045338",
+            "306050522"
+          ],
+          "gross_out": "656297003265410187",
+          "net_out": "656295233265410187",
+          "gas": "295000",
+          "elapsed_us": 217,
+          "delta_bp": 4.516392851713999e-07,
+          "seed_status": "accepted",
+          "refinement_skipped": true,
+          "certified_bound_bp": 2.5673504322222614e-05
+        }
+      }
+    },
+    {
+      "id": "one-pool",
+      "title": "One pool is enough",
+      "description": "The learned initializer declines because only one pool is active; Fynd continues unchanged.",
+      "benchmark": "fresh",
+      "repeat": 0,
+      "direction": "usdc-weth",
+      "input_symbol": "USDC",
+      "output_symbol": "WETH",
+      "input_decimals": 6,
+      "output_decimals": 18,
+      "amount_in": "52819560",
+      "gas_price_wei": "6000000",
+      "methods": {
+        "water_fill": {
+          "initial_pool_amounts": null,
+          "final_pool_amounts": [
+            "0",
+            "52819560"
+          ],
+          "gross_out": "19239167020910697",
+          "net_out": "19238282020910697",
+          "gas": "147500",
+          "elapsed_us": 527,
+          "delta_bp": 0.0,
+          "seed_status": "not_registered",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "coarse": {
+          "initial_pool_amounts": null,
+          "final_pool_amounts": [
+            "0",
+            "52819560"
+          ],
+          "gross_out": "19239167020910697",
+          "net_out": "19238282020910697",
+          "gas": "147500",
+          "elapsed_us": 519,
+          "delta_bp": 0.0,
+          "seed_status": "declined",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "offset": {
+          "initial_pool_amounts": null,
+          "final_pool_amounts": [
+            "0",
+            "52819560"
+          ],
+          "gross_out": "19239167020910697",
+          "net_out": "19238282020910697",
+          "gas": "147500",
+          "elapsed_us": 511,
+          "delta_bp": 0.0,
+          "seed_status": "declined",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "offset_certified": {
+          "initial_pool_amounts": null,
+          "final_pool_amounts": [
+            "0",
+            "52819560"
+          ],
+          "gross_out": "19239167020910697",
+          "net_out": "19238282020910697",
+          "gas": "147500",
+          "elapsed_us": 536,
+          "delta_bp": 0.0,
+          "seed_status": "declined",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        }
+      }
+    },
+    {
+      "id": "refinement",
+      "title": "The check retains refinement",
+      "description": "The neighboring-quote check does not authorize skipping; exchange refinement still runs.",
+      "benchmark": "fresh",
+      "repeat": 0,
+      "direction": "usdc-weth",
+      "input_symbol": "USDC",
+      "output_symbol": "WETH",
+      "input_decimals": 6,
+      "output_decimals": 18,
+      "amount_in": "223817483000",
+      "gas_price_wei": "6000000",
+      "methods": {
+        "water_fill": {
+          "initial_pool_amounts": null,
+          "final_pool_amounts": [
+            "211987286463",
+            "11830196537"
+          ],
+          "gross_out": "81200293056382560394",
+          "net_out": "81200288028382560394",
+          "gas": "838000",
+          "elapsed_us": 2433,
+          "delta_bp": 0.0,
+          "seed_status": "not_registered",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "coarse": {
+          "initial_pool_amounts": [
+            "212626608850",
+            "11190874150"
+          ],
+          "final_pool_amounts": [
+            "211984554304",
+            "11832928696"
+          ],
+          "gross_out": "81200293054274106441",
+          "net_out": "81200288026274106441",
+          "gas": "838000",
+          "elapsed_us": 846,
+          "delta_bp": -2.59660895816406e-07,
+          "seed_status": "accepted",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "offset": {
+          "initial_pool_amounts": [
+            "210914918748",
+            "12902564252"
+          ],
+          "final_pool_amounts": [
+            "211994116815",
+            "11823366185"
+          ],
+          "gross_out": "81200293053689947217",
+          "net_out": "81200288025689947217",
+          "gas": "838000",
+          "elapsed_us": 850,
+          "delta_bp": -3.3160143176571374e-07,
+          "seed_status": "accepted",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        },
+        "offset_certified": {
+          "initial_pool_amounts": [
+            "210914918748",
+            "12902564252"
+          ],
+          "final_pool_amounts": [
+            "211994116815",
+            "11823366185"
+          ],
+          "gross_out": "81200293053689947217",
+          "net_out": "81200288025689947217",
+          "gas": "838000",
+          "elapsed_us": 861,
+          "delta_bp": -3.3160143176571374e-07,
+          "seed_status": "accepted",
+          "refinement_skipped": false,
+          "certified_bound_bp": null
+        }
+      }
+    }
+  ]
+}

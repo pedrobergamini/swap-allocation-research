@@ -1,0 +1,13 @@
+{
+  "name": "two-pool-v1",
+  "grid_steps": 64,
+  "order_sizes": {
+    "weth-usdc": {"base": "40000000000000000", "doublings": 15},
+    "usdc-weth": {"base": "100000000", "doublings": 15}
+  },
+  "splits": {
+    "train": [0, 23],
+    "validation": [24, 27],
+    "test": [28, 31]
+  }
+}

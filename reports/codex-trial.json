@@ -1,0 +1,66 @@
+{
+  "format": "sar-connected-trial/1",
+  "status": "completed",
+  "scope": "One development trial; frozen v1 unchanged; not a held-out improvement claim",
+  "proposal": {
+    "source": "Codex CLI",
+    "cli_version": "codex-cli 0.153.0",
+    "model": null,
+    "model_identity_note": "The CLI event stream did not report the model identifier.",
+    "tool_calls": 0
+  },
+  "recipe": {
+    "hidden": [
+      16,
+      16
+    ],
+    "epochs": 300,
+    "learning_rate": 0.003
+  },
+  "fixed": {
+    "seed": 1,
+    "batch": 256,
+    "chunks": 1.0,
+    "feature_spec": "coarse-offset/2",
+    "loss": "smooth absolute allocation error",
+    "refinement": "always"
+  },
+  "usable_rows": {
+    "train": 19455,
+    "validation": 4929
+  },
+  "durations_seconds": {
+    "proposal": 9.537465999999768,
+    "training": 6.56225008399997,
+    "evaluation": 127.56495325000014
+  },
+  "candidate_sha256": "d0b77687f110a4a88d16c04b276ebcc558901b4ed8ea94c04835223fecaa02c9",
+  "weights_changed": true,
+  "frozen_unchanged": true,
+  "evaluation": {
+    "seconds": 127.56495325000014,
+    "candidate_vs_fynd": {
+      "paired_solves": 19008,
+      "quality_failures_over_0_1bp": 0,
+      "worst_loss_bp": 0.03854437523685415,
+      "median_time_ratio": 0.29771479890962604,
+      "p90_time_ratio": 0.9963898916967509
+    },
+    "frozen_offset_vs_fynd": {
+      "paired_solves": 19008,
+      "quality_failures_over_0_1bp": 0,
+      "worst_loss_bp": 0.03854437523685415,
+      "median_time_ratio": 0.3232992812015692,
+      "p90_time_ratio": 1.0413659793814432
+    },
+    "candidate_vs_frozen_offset": {
+      "paired_solves": 19008,
+      "quality_failures_over_0_1bp": 0,
+      "worst_loss_bp": 0.0002897762724451877,
+      "median_time_ratio": 0.9848062790966103,
+      "p90_time_ratio": 1.7382298222880412
+    },
+    "timing_note": "Candidate and frozen evaluated in separate passes; indicative local timing."
+  },
+  "public_description": "The Codex experiment harness completed one proposal, training, and validation trial. Codex selected two hidden layers of 16 units, 300 epochs, and learning rate 0.003. Local training updated the weights in 6.56 seconds. Validation replay covered 6,336 distinct orders repeated three times, or 19,008 paired solves per method. The candidate had no losses above the 0.1-basis-point output-after-gas limit; its worst loss against Fynd was 0.03854 basis points. Candidate and frozen-model timing ran in separate passes, so the comparison does not establish a speed improvement. This trial used validation data and did not replace frozen v1. The proposal stream contained no tool calls. Reusable autonomous orchestration remains in progress."
+}

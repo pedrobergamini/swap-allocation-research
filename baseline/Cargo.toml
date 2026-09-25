@@ -1,0 +1,42 @@
+[package]
+name = "swap-allocation-baseline"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "The swap-allocation runner built against unmodified Fynd"
+
+# Its own workspace, so the unmodified fynd-core never shares a lockfile with the patched one.
+[workspace]
+
+[lib]
+name = "swap_allocation_research"
+path = "../src/lib.rs"
+
+[[bin]]
+name = "sar-bench"
+path = "../src/bin/sar-bench.rs"
+
+[features]
+# Must stay off: unmodified Fynd has no initializer hook.
+learned = []
+
+[dependencies]
+fynd-core = { path = "../work/fynd-clean/fynd-core", features = ["test-utils"] }
+fynd-rpc = { path = "../work/fynd-clean/fynd-rpc" }
+fynd-test-fixtures = { path = "../work/fynd-clean/test-fixtures" }
+tycho-simulation = "=0.378.4"
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+num-bigint = "0.4"
+num-traits = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip"] }
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+debug = false

@@ -1,0 +1,19 @@
+{
+  "format": "sar-release-models/1",
+  "model_version": "v1",
+  "license": "MIT",
+  "feature_spec": "coarse-offset/2",
+  "artifact_format": "sar-mlp/2",
+  "fynd_revision": "c7622b41d1eee5f18082dab8beed2ee2db5b7cde",
+  "certificate_step_divisor": 512,
+  "files": [
+    {
+      "path": "offset.json",
+      "sha256": "4627ebe82070d1dc4f4b3232b50c592def0493b99cd0f3bd445271b1e7ab7a53"
+    },
+    {
+      "path": "confidence.json",
+      "sha256": "419f82c344a9324f5bdce73bce295cf6097c971657d553da55f80e3ab834a9da"
+    }
+  ]
+}

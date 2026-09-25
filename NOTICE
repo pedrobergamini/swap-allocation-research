@@ -1,0 +1,17 @@
+Swap Allocation Research
+Copyright (c) 2026 Pedro Bergamini
+
+The new project code, documentation and published numerical model weights are
+provided under the MIT license in LICENSE.
+
+This work grew out of internal dsolver work at Dewiz. Thanks to Propeller Heads
+for developing Fynd, the open-source solver used for refinement and benchmarking.
+
+Fynd is developed by Propeller Heads and its contributors:
+https://github.com/propeller-heads/fynd
+Revision c7622b41d1eee5f18082dab8beed2ee2db5b7cde declares MIT in its Cargo manifest.
+The setup script retrieves upstream source; it is not vendored in this release.
+The Fynd patch includes upstream code as context. Existing upstream notices remain
+applicable to that code. Dependency licenses remain those of their publishers.
+
+The original market-state dataset is not included or licensed by this release.

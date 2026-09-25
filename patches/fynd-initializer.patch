@@ -1,0 +1,573 @@
+diff --git a/fynd-core/src/algorithm/water_fill/initializer.rs b/fynd-core/src/algorithm/water_fill/initializer.rs
+new file mode 100644
+index 00000000..9f40248e
+--- /dev/null
++++ b/fynd-core/src/algorithm/water_fill/initializer.rs
+@@ -0,0 +1,115 @@
++//! A replaceable seed for Water-fill's 256-chunk passes.
++//!
++//! Water-fill runs a fine 256-chunk water-fill in two places: the refined disjoint split, which
++//! hands its result to exchange refinement, and fill-and-spill, whose result is a candidate as is.
++//! An initializer registered with
++//! [`WaterFillAlgorithm::with_fine_initializer`](super::WaterFillAlgorithm::with_fine_initializer)
++//! can propose that allocation instead in both. On the disjoint split it can also ask to skip
++//! exchange refinement and have its amounts taken as the split's result. Discovery, the coarse
++//! passes, the active sets, the other candidates and final selection are unchanged, and the best
++//! net candidate still wins, so a poor seed can only cost what the other candidates cannot
++//! recover; it never removes the 20-chunk floor or the single path.
++//!
++//! Fill-and-spill's active paths may share components. Probes price each path alone against
++//! untouched state, so an initializer that cannot account for shared components should decline
++//! when it sees them.
++
++use num_bigint::BigUint;
++use tycho_simulation::tycho_common::models::Address;
++
++use crate::types::ComponentId;
++
++/// One path of the active set, in the order the allocation must follow.
++#[derive(Debug, Clone)]
++pub struct ActivePath {
++    /// Components the path crosses, first hop first.
++    pub components: Vec<ComponentId>,
++    /// The order's input token, where the path starts.
++    pub token_in: Address,
++    /// The order's output token, where the path ends.
++    pub token_out: Address,
++}
++
++/// What a path pays for an amount swapped against untouched state.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct ProbeQuote {
++    /// Gross output in the output token's smallest unit.
++    pub amount_out: BigUint,
++    /// Gas units the path's swaps use.
++    pub gas: BigUint,
++}
++
++/// What each chunk of the 20-chunk pass added to one path's gross output.
++///
++/// The pass already priced these on the path's own drained state, so they cost an initializer
++/// nothing: they describe the path's output curve around its coarse amount.
++#[derive(Debug, Clone, Default, PartialEq, Eq)]
++pub struct ChunkGains {
++    /// Gross output each chunk the path won added, in the order it won them.
++    pub paid: Vec<BigUint>,
++    /// What the path's next chunk would have added when the pass ended. `None` for the path that
++    /// won the last chunk, a path whose price the pass had to forget, or a failed simulation.
++    pub next: Option<BigUint>,
++}
++
++/// The question put to an initializer: how to divide `amount_in` across `paths`.
++pub struct FineAllocationRequest<'r> {
++    /// The whole order, in the input token's smallest unit.
++    pub amount_in: &'r BigUint,
++    /// The active set, in allocation order.
++    pub paths: &'r [ActivePath],
++    /// The 20-chunk allocation that chose the active set, aligned with `paths`.
++    pub coarse: &'r [BigUint],
++    /// What each chunk of that pass added to each path, aligned with `paths`.
++    pub coarse_gains: &'r [ChunkGains],
++    probe: &'r mut dyn FnMut(usize, &BigUint) -> Option<ProbeQuote>,
++}
++
++impl<'r> FineAllocationRequest<'r> {
++    pub(super) fn new(
++        amount_in: &'r BigUint,
++        paths: &'r [ActivePath],
++        coarse: &'r [BigUint],
++        coarse_gains: &'r [ChunkGains],
++        probe: &'r mut dyn FnMut(usize, &BigUint) -> Option<ProbeQuote>,
++    ) -> Self {
++        Self { amount_in, paths, coarse, coarse_gains, probe }
++    }
++
++    /// Simulates `amount` through `paths[path_index]` inside the solve.
++    ///
++    /// Goes through the solve's swap cache, so an amount the solve already priced exactly costs
++    /// nothing, and every probe that does simulate is counted in the solve's own time.
++    pub fn probe(&mut self, path_index: usize, amount: &BigUint) -> Option<ProbeQuote> {
++        (self.probe)(path_index, amount)
++    }
++}
++
++/// What the disjoint split does with a proposed allocation.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub enum Refinement {
++    /// Run exchange refinement from the amounts, as it would from the fine water-fill.
++    Exchange,
++    /// Take the amounts as the disjoint split's result without exchange refinement.
++    ///
++    /// Fill-and-spill has no exchange refinement and ignores this. Every other candidate and the
++    /// best-net selection still run, so a skipped split still has to beat them to win.
++    Skip,
++}
++
++/// An initializer's proposal for the active set.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct FineAllocation {
++    /// One amount per active path, in allocation order, summing exactly to `amount_in`.
++    pub amounts: Vec<BigUint>,
++    /// Whether the disjoint split refines `amounts` or takes them as is.
++    pub refinement: Refinement,
++}
++
++/// Proposes the allocation exchange refinement starts from.
++pub trait FineAllocationInitializer: Send + Sync {
++    /// Returns an allocation for the active set, or `None` to keep Water-fill's own fine
++    /// allocation for this solve.
++    fn initial_allocation(&self, request: &mut FineAllocationRequest<'_>)
++        -> Option<FineAllocation>;
++}
+diff --git a/fynd-core/src/algorithm/water_fill/mod.rs b/fynd-core/src/algorithm/water_fill/mod.rs
+index 5d990dd4..8a9590dc 100644
+--- a/fynd-core/src/algorithm/water_fill/mod.rs
++++ b/fynd-core/src/algorithm/water_fill/mod.rs
+@@ -29,13 +29,20 @@
+ //! assembled through the shared split primitives and can be encoded on-chain.
+ 
+ mod config;
++pub mod initializer;
+ mod models;
+ 
+ use std::{
+     cmp::{Ordering, Reverse},
++    sync::Arc,
+     time::{Duration, Instant},
+ };
+ 
++use initializer::{
++    ActivePath, ChunkGains, FineAllocation, FineAllocationInitializer, FineAllocationRequest,
++    ProbeQuote, Refinement,
++};
++
+ use models::{
+     CandidatePathState, CandidateSearchConfig, Deadline, Discovery, ExchangeMove,
+     FullAmountOutcome, FullAmountRanking, ScoredEdge, SetupResult, SolveInput, SolveStage,
+@@ -45,7 +52,7 @@ use num_bigint::{BigInt, BigUint};
+ use num_traits::Zero;
+ use petgraph::{graph::NodeIndex, prelude::EdgeRef};
+ use rustc_hash::{FxHashMap, FxHashSet};
+-use tracing::{debug, instrument, trace};
++use tracing::{debug, instrument, trace, warn};
+ use tycho_simulation::tycho_common::{models::Address, simulation::protocol_sim::ProtocolSim};
+ 
+ use super::{
+@@ -85,6 +92,7 @@ pub struct WaterFillAlgorithm {
+     timeout: Duration,
+     max_candidates: usize,
+     max_paths: usize,
++    fine_initializer: Option<Arc<dyn FineAllocationInitializer>>,
+ }
+ 
+ impl WaterFillAlgorithm {
+@@ -102,9 +110,21 @@ impl WaterFillAlgorithm {
+                 .unwrap_or(DEFAULT_MAX_CANDIDATES)
+                 .max(DEFAULT_MAX_PATHS),
+             max_paths: DEFAULT_MAX_PATHS,
++            fine_initializer: None,
+         })
+     }
+ 
++    /// A `WaterFillAlgorithm` whose refined disjoint split starts from `initializer`'s allocation
++    /// instead of the 256-chunk water-fill, whenever the initializer offers one.
++    pub fn with_fine_initializer(
++        config: AlgorithmConfig,
++        initializer: Arc<dyn FineAllocationInitializer>,
++    ) -> Result<Self, AlgorithmError> {
++        let mut algorithm = Self::with_config(config)?;
++        algorithm.fine_initializer = Some(initializer);
++        Ok(algorithm)
++    }
++
+     /// Simulates `amount` through `path`, reading each component from `overlay` if present else the
+     /// base state. Returns the output, summed gas, and the resulting per-component states so
+     /// the caller can commit them into an overlay.
+@@ -489,9 +509,9 @@ impl Algorithm for WaterFillAlgorithm {
+         let coarse = (disjoint.len() >= 2)
+             .then(|| self.disjoint_waterfill(&input, &disjoint, COARSE_CHUNKS, true))
+             .flatten();
+-        if let Some(coarse) = coarse.as_deref() {
++        if let Some(coarse) = coarse.as_ref() {
+             // The 20-chunk floor split: exactly the coarse allocation.
+-            if let Some(c) = self.build_disjoint_legs(&input, &disjoint, coarse) {
++            if let Some(c) = self.build_disjoint_legs(&input, &disjoint, &coarse.amounts) {
+                 candidates.push(c);
+             }
+             // Finer allocation over the same active set (a bonus; a timeout may cut it off, and
+@@ -557,30 +577,47 @@ impl WaterFillAlgorithm {
+     /// Refines the 20-chunk floor split on a finer grid. Given the shared coarse water-fill the
+     /// floor is built from, it fixes the active path set (the coarse-gated paths with a nonzero
+     /// amount), re-allocates over that set on a fine grid with the gate off (gas already
+-    /// justified), then runs the exchange-refinement pass. If a tight timeout cuts off either pass
+-    /// this returns `None` and the caller falls back to the 20-chunk floor candidate.
++    /// justified), then runs the exchange-refinement pass. A registered initializer can replace
++    /// the fine allocation, or the whole result when it asks to skip exchange refinement. If a
++    /// tight timeout cuts off either pass this returns `None` and the caller falls back to the
++    /// 20-chunk floor candidate.
+     fn disjoint_refine<'g>(
+         &self,
+         input: &SolveInput<'_, 'g>,
+         disjoint: &[usize],
+-        coarse: &[BigUint],
++        coarse: &ChunkedAllocation,
+         fine_chunks: usize,
+         cache: &mut SwapCache<'g>,
+     ) -> Option<SplitCandidate> {
+         // The active set is the coarse-gated paths that were allocated a nonzero amount.
+-        let active: Vec<usize> = disjoint
+-            .iter()
+-            .copied()
+-            .zip(coarse.iter())
+-            .filter(|(_, amt)| !amt.is_zero())
+-            .map(|(idx, _)| idx)
+-            .collect();
++        let mut active = Vec::new();
++        let mut active_coarse = Vec::new();
++        let mut active_gains = Vec::new();
++        for ((&idx, amount), gains) in disjoint.iter().zip(&coarse.amounts).zip(&coarse.gains) {
++            if !amount.is_zero() {
++                active.push(idx);
++                active_coarse.push(amount.clone());
++                active_gains.push(gains.clone());
++            }
++        }
+         if active.is_empty() {
+             return None;
+         }
+ 
+-        // Fine water-fill over the fixed active set, no gate (gas already justified).
+-        let fine = self.disjoint_waterfill(input, &active, fine_chunks, false)?;
++        // Fine water-fill over the fixed active set, no gate (gas already justified), unless an
++        // initializer supplies the starting allocation. An initializer may also ask to skip
++        // exchange refinement, and then its amounts are the result.
++        let fine =
++            match self.initial_allocation(input, &active, &active_coarse, &active_gains, cache) {
++                Some(FineAllocation { amounts, refinement: Refinement::Skip }) => {
++                    return self.build_disjoint_legs(input, &active, &amounts);
++                }
++                Some(FineAllocation { amounts, refinement: Refinement::Exchange }) => amounts,
++                None => {
++                    self.disjoint_waterfill(input, &active, fine_chunks, false)?
++                        .amounts
++                }
++            };
+ 
+         // Exchange refinement. The fine water-fill quantizes each path to a whole chunk, so it can
+         // sit up to one chunk off the equal-marginal optimum. Nudge flow between paths at sub-chunk
+@@ -589,6 +626,55 @@ impl WaterFillAlgorithm {
+         self.build_disjoint_legs(input, &active, &refined)
+     }
+ 
++    /// Asks the registered initializer for the active set's starting allocation. `None` when there
++    /// is no initializer, it declines, or its answer does not divide the order exactly.
++    fn initial_allocation<'g>(
++        &self,
++        input: &SolveInput<'_, 'g>,
++        active: &[usize],
++        coarse: &[BigUint],
++        coarse_gains: &[ChunkGains],
++        cache: &mut SwapCache<'g>,
++    ) -> Option<FineAllocation> {
++        let initializer = self.fine_initializer.as_ref()?;
++        let paths: Vec<ActivePath> = active
++            .iter()
++            .map(|&path_idx| {
++                let path = &input.ordered[path_idx];
++                ActivePath {
++                    components: path
++                        .edge_iter()
++                        .iter()
++                        .map(|edge| edge.component_id.clone())
++                        .collect(),
++                    token_in: input.order.token_in().clone(),
++                    token_out: input.order.token_out().clone(),
++                }
++            })
++            .collect();
++        let mut probe = |path_index: usize, amount: &BigUint| {
++            let path = &input.ordered[*active.get(path_index)?];
++            simulate_path(path, &input.market, cache, amount.clone(), SolveStage::Initializer)
++                .map(|paid| ProbeQuote { amount_out: paid.amount_out, gas: paid.gas })
++        };
++        let amount_in = input.order.amount();
++        let mut request =
++            FineAllocationRequest::new(amount_in, &paths, coarse, coarse_gains, &mut probe);
++        let allocation = initializer.initial_allocation(&mut request)?;
++        let allocated: BigUint = allocation.amounts.iter().sum();
++        if allocation.amounts.len() != active.len() || &allocated != amount_in {
++            warn!(
++                paths = active.len(),
++                proposed = allocation.amounts.len(),
++                %allocated,
++                %amount_in,
++                "fine initializer allocation does not divide the order; using water-fill"
++            );
++            return None;
++        }
++        Some(allocation)
++    }
++
+     /// Net output (gross output minus gas cost in output-token terms) of `path` simulated in
+     /// isolation at `amount`. Component-disjoint paths never interfere, so an isolated
+     /// re-simulation is exact. A zero amount means the path is dropped from the route: it
+@@ -832,7 +918,7 @@ impl WaterFillAlgorithm {
+         subset: &[usize],
+         num_chunks: usize,
+         gate: bool,
+-    ) -> Option<Vec<BigUint>> {
++    ) -> Option<ChunkedAllocation> {
+         let amount_in = input.order.amount().clone();
+         let num_chunks = num_chunks.max(1);
+         let base_chunk = &amount_in / num_chunks;
+@@ -846,6 +932,7 @@ impl WaterFillAlgorithm {
+             .map(|_| MarketOverrides::empty())
+             .collect();
+         let mut cumulative_amount_in: Vec<BigUint> = vec![BigUint::zero(); path_count];
++        let mut gains: Vec<ChunkGains> = vec![ChunkGains::default(); path_count];
+         let mut activated: Vec<bool> = vec![!gate; path_count];
+ 
+         // What each path last paid for a chunk. Only the path that wins a chunk commits anything,
+@@ -907,13 +994,17 @@ impl WaterFillAlgorithm {
+                 break;
+             };
+ 
++            gains[best_i].paid.push(step.amount_out.clone());
+             for (id, state) in step.new_states {
+                 committed[best_i].insert(id, state);
+             }
+             cumulative_amount_in[best_i] += &chunk;
+             activated[best_i] = true;
+         }
+-        Some(cumulative_amount_in)
++        for (path_gains, marginal) in gains.iter_mut().zip(&marginals) {
++            path_gains.next = marginal.as_ref().map(|step| step.amount_out.clone());
++        }
++        Some(ChunkedAllocation { amounts: cumulative_amount_in, gains })
+     }
+ 
+     /// Selects fill-and-spill candidates: the top full-amount paths plus the best first-chunk
+@@ -993,7 +1084,7 @@ impl WaterFillAlgorithm {
+         // Phase 1: coarse gated pass to choose the active candidate set — the candidates that
+         // took at least one chunk.
+         let coarse = self.fillspill_waterfill(input, &candidates, COARSE_CHUNKS, true)?;
+-        let took_a_chunk: FxHashSet<usize> = coarse.iter().map(|(i, _)| *i).collect();
++        let took_a_chunk: FxHashSet<usize> = coarse.schedule.iter().map(|(i, _)| *i).collect();
+         let active: Vec<usize> = candidates
+             .iter()
+             .copied()
+@@ -1005,8 +1096,35 @@ impl WaterFillAlgorithm {
+             return None;
+         }
+ 
+-        // Phase 2: fine ungated pass over the active set, with the commit schedule for replay.
+-        let schedule = self.fillspill_waterfill(input, &active, fine_chunks, false)?;
++        // Each active candidate's coarse amount and chunk gains, in `active` order: where an
++        // initializer starts.
++        let mut active_coarse = vec![BigUint::zero(); active.len()];
++        for (i, chunk) in &coarse.schedule {
++            if let Some(position) = active.iter().position(|&idx| idx == candidates[*i]) {
++                active_coarse[position] += chunk;
++            }
++        }
++        let active_gains: Vec<ChunkGains> = candidates
++            .iter()
++            .zip(&coarse.gains)
++            .filter(|(idx, _)| active.contains(idx))
++            .map(|(_, gains)| gains.clone())
++            .collect();
++
++        // Phase 2: fine ungated pass over the active set, with the commit schedule for replay,
++        // unless an initializer supplies the allocation. Its answer becomes one entry per path at
++        // the path's whole amount; the route is built from per-path totals either way. There is
++        // no exchange refinement here, so the initializer's refinement choice does not apply.
++        let schedule =
++            match self.initial_allocation(input, &active, &active_coarse, &active_gains, cache) {
++                Some(allocation) => allocation
++                    .amounts
++                    .into_iter()
++                    .enumerate()
++                    .filter(|(_, amount)| !amount.is_zero())
++                    .collect(),
++                None => self.fillspill_waterfill(input, &active, fine_chunks, false)?.schedule,
++            };
+         if schedule.is_empty() {
+             return None;
+         }
+@@ -1023,7 +1141,7 @@ impl WaterFillAlgorithm {
+         subset: &[usize],
+         num_chunks: usize,
+         gate: bool,
+-    ) -> Option<Vec<(usize, BigUint)>> {
++    ) -> Option<FillspillPass> {
+         let amount_in = input.order.amount().clone();
+         let num_chunks = num_chunks.max(1);
+         let base_chunk = &amount_in / num_chunks;
+@@ -1036,6 +1154,7 @@ impl WaterFillAlgorithm {
+         let mut activated: Vec<bool> = vec![!gate; subset.len()];
+         let mut active_count = if gate { 0 } else { subset.len() };
+         let mut schedule: Vec<(usize, BigUint)> = Vec::with_capacity(num_chunks);
++        let mut gains: Vec<ChunkGains> = vec![ChunkGains::default(); subset.len()];
+         // What each candidate last paid for a chunk, kept so a candidate the winning chunk did not
+         // touch is not asked the same question again. Candidates here may share pools — that is the
+         // point of fill-and-spill — so committing a chunk forgets every candidate crossing one of
+@@ -1101,6 +1220,7 @@ impl WaterFillAlgorithm {
+                 break;
+             };
+ 
++            gains[best_i].paid.push(step.amount_out.clone());
+             let pools_moved: FxHashSet<&ComponentId> = step
+                 .new_states
+                 .iter()
+@@ -1125,8 +1245,11 @@ impl WaterFillAlgorithm {
+             }
+             schedule.push((best_i, chunk));
+         }
++        for (candidate_gains, marginal) in gains.iter_mut().zip(&marginals) {
++            candidate_gains.next = marginal.as_ref().map(|step| step.amount_out.clone());
++        }
+ 
+-        Some(schedule)
++        Some(FillspillPass { schedule, gains })
+     }
+ 
+     /// Rebuilds the fill-and-spill result as one leg per active path at its total allocated
+@@ -1167,6 +1290,18 @@ impl WaterFillAlgorithm {
+     }
+ }
+ 
++/// A disjoint water-fill's allocation per path, with what each chunk added to each path.
++struct ChunkedAllocation {
++    amounts: Vec<BigUint>,
++    gains: Vec<ChunkGains>,
++}
++
++/// A fill-and-spill water-fill's commit schedule, with what each chunk added to each candidate.
++struct FillspillPass {
++    schedule: Vec<(usize, BigUint)>,
++    gains: Vec<ChunkGains>,
++}
++
+ /// Whether `path` crosses the same component more than once. Such a path has to see its own
+ /// earlier swap, so it cannot be simulated against untouched component state.
+ fn path_reuses_component<W>(path: &Path<'_, W>) -> bool {
+@@ -2139,4 +2274,88 @@ mod tests {
+             "native-ETH sentinel should always be anchored",
+         );
+     }
++
++    // ==================== Fine initializer ====================
++
++    /// Proposes a fixed percentage of the order for the first active path and the rest for the
++    /// second, with a fixed refinement choice.
++    struct FixedShareInitializer {
++        first_path_percent: u64,
++        refinement: Refinement,
++    }
++
++    impl FineAllocationInitializer for FixedShareInitializer {
++        fn initial_allocation(
++            &self,
++            request: &mut FineAllocationRequest<'_>,
++        ) -> Option<FineAllocation> {
++            let first = request.amount_in * self.first_path_percent / 100u64;
++            let second = request.amount_in - &first;
++            Some(FineAllocation { amounts: vec![first, second], refinement: self.refinement })
++        }
++    }
++
++    /// Runs the refined disjoint split alone, chained the way `find_best_route` chains it, so the
++    /// other candidates cannot hide what it returned. Returns the legs' input amounts, sorted, and
++    /// the split's gross output.
++    async fn refined_disjoint_split(initializer: FixedShareInitializer) -> (Vec<BigUint>, BigUint) {
++        let m = two_equal_weth_usdc(1);
++        let order = whole_weth_order(&m.weth, &m.usdc, 500);
++        let algorithm =
++            WaterFillAlgorithm::with_fine_initializer(config(), Arc::new(initializer)).unwrap();
++        let deadline = Deadline::new(Instant::now(), algorithm.timeout);
++        let SetupResult { input, mut cache, .. } = algorithm
++            .setup(
++                m.weighted.graph(),
++                m.market.clone(),
++                None,
++                Some(m.derived.clone()),
++                &order,
++                deadline,
++            )
++            .await
++            .expect("setup succeeds");
++        let disjoint = WaterFillAlgorithm::select_disjoint(&input.ordered, algorithm.max_paths);
++        let coarse = algorithm
++            .disjoint_waterfill(&input, &disjoint, COARSE_CHUNKS, true)
++            .expect("coarse pass succeeds");
++        let split = algorithm
++            .disjoint_refine(&input, &disjoint, &coarse, FINE_CHUNKS, &mut cache)
++            .expect("refined split succeeds");
++        let mut leg_amounts: Vec<BigUint> = split
++            .route
++            .swaps()
++            .iter()
++            .map(|swap| swap.amount_in().clone())
++            .collect();
++        leg_amounts.sort();
++        (leg_amounts, split.gross)
++    }
++
++    /// A 70/30 proposal on two equal components is far off the 50/50 optimum. Asked to skip, the
++    /// disjoint split returns it untouched; asked to exchange, refinement moves flow off it and
++    /// pays more.
++    #[tokio::test]
++    async fn test_skip_proposal_is_returned_without_exchange_refinement() {
++        let weth = BigUint::from(10u64).pow(18);
++        let proposed = vec![BigUint::from(150u64) * &weth, BigUint::from(350u64) * &weth];
++
++        let (skipped_legs, skipped_gross) = refined_disjoint_split(FixedShareInitializer {
++            first_path_percent: 70,
++            refinement: Refinement::Skip,
++        })
++        .await;
++        let (exchanged_legs, exchanged_gross) = refined_disjoint_split(FixedShareInitializer {
++            first_path_percent: 70,
++            refinement: Refinement::Exchange,
++        })
++        .await;
++
++        assert_eq!(skipped_legs, proposed, "a skipped proposal is the split as is");
++        assert_ne!(exchanged_legs, proposed, "an exchanged proposal is refined");
++        assert!(
++            exchanged_gross > skipped_gross,
++            "refinement should pay more: exchanged={exchanged_gross} skipped={skipped_gross}",
++        );
++    }
+ }
+diff --git a/fynd-core/src/algorithm/water_fill/models.rs b/fynd-core/src/algorithm/water_fill/models.rs
+index 35e7e86b..e46b38d3 100644
+--- a/fynd-core/src/algorithm/water_fill/models.rs
++++ b/fynd-core/src/algorithm/water_fill/models.rs
+@@ -167,6 +167,8 @@ pub(crate) enum SolveStage {
+     Chunking,
+     /// Building the legs of a route that will be returned.
+     Assembly,
++    /// A registered fine initializer probing active paths against untouched state.
++    Initializer,
+ }
+ 
+ impl SolveStage {
+@@ -179,6 +181,7 @@ impl SolveStage {
+             SolveStage::Exchange => "exchange",
+             SolveStage::Chunking => "chunking",
+             SolveStage::Assembly => "assembly",
++            SolveStage::Initializer => "initializer",
+         }
+     }
+ 
+@@ -201,7 +204,8 @@ impl SolveStage {
+             SolveStage::Discovery |
+             SolveStage::Exchange |
+             SolveStage::Chunking |
+-            SolveStage::Assembly => false,
++            SolveStage::Assembly |
++            SolveStage::Initializer => false,
+         }
+     }
+ }

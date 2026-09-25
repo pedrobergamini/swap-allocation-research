@@ -1,0 +1,43 @@
+[package]
+name = "swap-allocation-research"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Learned warm starts for two-pool swap allocation in Fynd's Water-fill"
+
+# Builds against the patched Fynd checkout that scripts/setup-fynd.sh prepares. baseline/ builds
+# the same runner against the unmodified checkout.
+[features]
+default = ["learned"]
+# Registers the seeded Water-fill variants; needs the initializer hook from
+# patches/fynd-initializer.patch.
+learned = []
+# Per-stage simulation counts in DEBUG logs (`fynd_core::algorithm::sim_meter`). Diagnostic
+# builds only: the meter adds overhead to every simulation, so never time with it on.
+swap-metrics = ["fynd-core/swap-metrics"]
+
+[dependencies]
+fynd-core = { path = "work/fynd-patched/fynd-core", features = ["test-utils"] }
+fynd-rpc = { path = "work/fynd-patched/fynd-rpc" }
+fynd-test-fixtures = { path = "work/fynd-patched/test-fixtures" }
+tycho-simulation = "=0.378.4"
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+num-bigint = "0.4"
+num-traits = "0.2"
+serde = { version = "1", features = ["derive"] }
+# Without arbitrary_precision, Tycho's recording helper drops any pool state holding an integer
+# wider than 64 bits, which includes the deep Uniswap V3 pools this experiment uses.
+serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip"] }
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+debug = false
