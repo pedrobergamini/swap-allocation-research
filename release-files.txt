@@ -7,6 +7,8 @@ README.md
 assets/architecture.png
 assets/architecture.svg
 assets/cover.png
+assets/demo-desktop.png
+assets/demo-mobile.png
 assets/performance.png
 assets/performance.svg
 assets/results.png
